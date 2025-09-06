@@ -21,22 +21,34 @@
             position: relative;
             overflow: hidden;
         }
-        .banana {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 40px;
-            line-height: 40px;
+          .banana {
+              position: absolute;
+              font-size: 40px;
+              line-height: 40px;
+          }
+          .gorilla {
+              position: absolute;
+              font-size: 40px;
+              line-height: 40px;
+          }
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
         button {
-            margin-top: 20px;
             font-size: 1.5rem;
         }
     </style>
 </head>
 <body>
     <div id="frame"></div>
-    <button id="drop-button">バナナを落とす</button>
+    <div id="controls">
+        <button id="left-button">←</button>
+        <button id="drop-button">バナナを落とす</button>
+        <button id="right-button">→</button>
+    </div>
     <script src="game.js"></script>
 </body>
 </html>

@@ -1,13 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
     const frame = document.getElementById('frame');
-    const button = document.getElementById('drop-button');
+    const dropButton = document.getElementById('drop-button');
+    const leftButton = document.getElementById('left-button');
+    const rightButton = document.getElementById('right-button');
 
     const BANANA_SIZE = 40;
+    const MOVE_STEP = 10;
     let stackHeight = 0;
-    let currentBanana = spawnBanana();
+    let dropX = (frame.clientWidth - BANANA_SIZE) / 2;
     let dropping = false;
+    let currentBanana = spawnBanana();
+    let gorilla;
 
-    button.addEventListener('click', () => {
+    gorilla = spawnGorilla();
+
+    function updateBananaPosition() {
+        currentBanana.style.left = dropX + 'px';
+    }
+
+    leftButton.addEventListener('click', () => {
+        if (dropping) return;
+        dropX = Math.max(0, dropX - MOVE_STEP);
+        updateBananaPosition();
+    });
+
+    rightButton.addEventListener('click', () => {
+        if (dropping) return;
+        dropX = Math.min(frame.clientWidth - BANANA_SIZE, dropX + MOVE_STEP);
+        updateBananaPosition();
+    });
+
+    dropButton.addEventListener('click', () => {
         if (dropping) return;
         dropping = true;
 
@@ -24,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentBanana.style.top = position + 'px';
                 stackHeight += BANANA_SIZE;
                 currentBanana = spawnBanana();
+                gorilla = spawnGorilla();
                 dropping = false;
                 return;
             }
@@ -40,8 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
         banana.style.fontSize = BANANA_SIZE + 'px';
         banana.style.lineHeight = BANANA_SIZE + 'px';
         banana.style.top = -BANANA_SIZE + 'px';
+        banana.style.left = dropX + 'px';
         frame.appendChild(banana);
         return banana;
+    }
+
+    function spawnGorilla() {
+        if (gorilla) {
+            gorilla.remove();
+        }
+        const g = document.createElement('div');
+        g.textContent = '🦍';
+        g.className = 'gorilla';
+        g.style.fontSize = BANANA_SIZE + 'px';
+        g.style.lineHeight = BANANA_SIZE + 'px';
+        const maxX = frame.clientWidth - BANANA_SIZE;
+        const randomX = Math.floor(Math.random() * (maxX + 1));
+        g.style.left = randomX + 'px';
+        g.style.bottom = '0px';
+        frame.appendChild(g);
+        return g;
     }
 });
 
