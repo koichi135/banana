@@ -30,6 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBananaPosition();
     });
 
+    document.addEventListener('keydown', (e) => {
+        if (dropping) return;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            dropX = Math.max(0, dropX - MOVE_STEP);
+            updateBananaPosition();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            dropX = Math.min(frame.clientWidth - BANANA_SIZE, dropX + MOVE_STEP);
+            updateBananaPosition();
+        }
+    });
+
     dropButton.addEventListener('click', () => {
         if (dropping) return;
         dropping = true;
@@ -81,8 +94,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxX = frame.clientWidth - BANANA_SIZE;
         const randomX = Math.floor(Math.random() * (maxX + 1));
         g.style.left = randomX + 'px';
-        g.style.bottom = '0px';
+        g.style.top = -BANANA_SIZE + 'px';
         frame.appendChild(g);
+
+        let position = -BANANA_SIZE;
+        let velocity = 0;
+        const gravity = 0.5;
+        const target = frame.clientHeight - BANANA_SIZE;
+
+        function fall() {
+            velocity += gravity;
+            position += velocity;
+            if (position >= target) {
+                position = target;
+                g.style.top = position + 'px';
+                return;
+            }
+            g.style.top = position + 'px';
+            requestAnimationFrame(fall);
+        }
+
+        requestAnimationFrame(fall);
         return g;
     }
 });
