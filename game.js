@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropButton = document.getElementById('drop-button');
     const leftButton = document.getElementById('left-button');
     const rightButton = document.getElementById('right-button');
+    const scoreDisplay = document.getElementById('score');
 
     const BANANA_SIZE = 40;
     const MOVE_STEP = 10;
@@ -10,9 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let dropX = (frame.clientWidth - BANANA_SIZE) / 2;
     let dropping = false;
     let currentBanana = spawnBanana();
-    let gorilla;
-
-    gorilla = spawnGorilla();
+    const bananas = [];
+    let score = 0;
 
     function updateBananaPosition() {
         currentBanana.style.left = dropX + 'px';
@@ -58,9 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (position >= target) {
                 position = target;
                 currentBanana.style.top = position + 'px';
+                const landedX = parseFloat(currentBanana.style.left) || 0;
+                if (bananas.length > 0) {
+                    const lastBanana = bananas[bananas.length - 1];
+                    if (Math.abs(lastBanana.x - landedX) < BANANA_SIZE / 2) {
+                        score += 1;
+                        updateScore();
+                    }
+                }
+                bananas.push({ element: currentBanana, x: landedX });
                 stackHeight += BANANA_SIZE;
                 currentBanana = spawnBanana();
-                gorilla = spawnGorilla();
                 dropping = false;
                 return;
             }
@@ -82,40 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return banana;
     }
 
-    function spawnGorilla() {
-        if (gorilla) {
-            gorilla.remove();
-        }
-        const g = document.createElement('div');
-        g.textContent = '🦍';
-        g.className = 'gorilla';
-        g.style.fontSize = BANANA_SIZE + 'px';
-        g.style.lineHeight = BANANA_SIZE + 'px';
-        const maxX = frame.clientWidth - BANANA_SIZE;
-        const randomX = Math.floor(Math.random() * (maxX + 1));
-        g.style.left = randomX + 'px';
-        g.style.top = -BANANA_SIZE + 'px';
-        frame.appendChild(g);
-
-        let position = -BANANA_SIZE;
-        let velocity = 0;
-        const gravity = 0.5;
-        const target = frame.clientHeight - BANANA_SIZE;
-
-        function fall() {
-            velocity += gravity;
-            position += velocity;
-            if (position >= target) {
-                position = target;
-                g.style.top = position + 'px';
-                return;
-            }
-            g.style.top = position + 'px';
-            requestAnimationFrame(fall);
-        }
-
-        requestAnimationFrame(fall);
-        return g;
+    function updateScore() {
+        scoreDisplay.textContent = `スコア: ${score}`;
     }
 });
 
