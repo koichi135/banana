@@ -21,20 +21,22 @@
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
         }
         #frame {
-            width: 400px;
-            height: 400px;
+            width: 800px;
+            height: 800px;
             border: 3px solid #333;
             position: relative;
             overflow: hidden;
             background-color: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(2px);
         }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            color: #2d4b1d;
+        }
           .banana {
-              position: absolute;
-              font-size: 40px;
-              line-height: 40px;
-          }
-          .gorilla {
               position: absolute;
               font-size: 40px;
               line-height: 40px;
@@ -63,7 +65,9 @@
     </style>
 </head>
 <body>
-    <div id="frame"></div>
+    <div id="frame">
+        <div id="score">スコア: 0</div>
+    </div>
     <div id="controls">
         <button id="left-button">←</button>
         <button id="drop-button">バナナを落とす</button>
