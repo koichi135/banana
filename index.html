@@ -13,6 +13,12 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background-image: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #f2f8f0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
         }
         #frame {
             width: 400px;
@@ -20,6 +26,8 @@
             border: 3px solid #333;
             position: relative;
             overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(2px);
         }
           .banana {
               position: absolute;
@@ -36,9 +44,21 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 12px;
         }
         button {
             font-size: 1.5rem;
+            color: #2d4b1d;
+            background-color: #f9f5d7;
+            border: 2px solid #a3c585;
+            border-radius: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e8e0b5;
         }
     </style>
 </head>
