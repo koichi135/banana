@@ -5,6 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const rightButton = document.getElementById('right-button');
     const scoreDisplay = document.getElementById('score');
 
+    document.addEventListener('dblclick', (event) => {
+        event.preventDefault();
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+
     const FRUIT_SIZE = 40;
     const GRID_COLUMNS = 15;
     const GRID_ROWS = 15;
@@ -57,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         dropping = true;
 
-        let position = -FRUIT_SIZE;
+        let position = currentFruit.offsetTop || 0;
         let velocity = 0;
         const gravity = 0.5;
         const targetRow = GRID_ROWS - columnHeights[dropColumn] - 1;
@@ -96,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fruit.className = 'fruit';
         fruit.style.fontSize = FRUIT_SIZE + 'px';
         fruit.style.lineHeight = FRUIT_SIZE + 'px';
-        fruit.style.top = -FRUIT_SIZE + 'px';
+        fruit.style.top = '0px';
         fruit.style.left = dropColumn * CELL_SIZE + 'px';
         frame.appendChild(fruit);
         return fruit;
