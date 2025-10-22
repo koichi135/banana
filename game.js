@@ -6,28 +6,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const scoreDisplay = document.getElementById('score');
 
     const FRUIT_SIZE = 40;
-    const MOVE_STEP = 25;
+    const GRID_COLUMNS = 15;
+    const GRID_ROWS = 15;
+    const CELL_SIZE = FRUIT_SIZE;
     const FRUITS = ['🍌', '🍎', '🍊'];
-    let stackHeight = 0;
-    let dropX = (frame.clientWidth - FRUIT_SIZE) / 2;
+    frame.style.width = GRID_COLUMNS * CELL_SIZE + 'px';
+    frame.style.height = GRID_ROWS * CELL_SIZE + 'px';
+
+    const columnHeights = Array(GRID_COLUMNS).fill(0);
+    const grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLUMNS).fill(null));
+
+    let dropColumn = Math.floor(GRID_COLUMNS / 2);
     let dropping = false;
     let currentFruit = spawnFruit();
-    const fruits = [];
     let score = 0;
 
     function updateFruitPosition() {
-        currentFruit.style.left = dropX + 'px';
+        currentFruit.style.left = dropColumn * CELL_SIZE + 'px';
     }
 
     leftButton.addEventListener('click', () => {
         if (dropping) return;
-        dropX = Math.max(0, dropX - MOVE_STEP);
+        dropColumn = Math.max(0, dropColumn - 1);
         updateFruitPosition();
     });
 
     rightButton.addEventListener('click', () => {
         if (dropping) return;
-        dropX = Math.min(frame.clientWidth - FRUIT_SIZE, dropX + MOVE_STEP);
+        dropColumn = Math.min(GRID_COLUMNS - 1, dropColumn + 1);
         updateFruitPosition();
     });
 
@@ -35,23 +41,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dropping) return;
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            dropX = Math.max(0, dropX - MOVE_STEP);
+            dropColumn = Math.max(0, dropColumn - 1);
             updateFruitPosition();
         } else if (e.key === 'ArrowRight') {
             e.preventDefault();
-            dropX = Math.min(frame.clientWidth - FRUIT_SIZE, dropX + MOVE_STEP);
+            dropColumn = Math.min(GRID_COLUMNS - 1, dropColumn + 1);
             updateFruitPosition();
         }
     });
 
     dropButton.addEventListener('click', () => {
         if (dropping) return;
+        if (columnHeights[dropColumn] >= GRID_ROWS) {
+            return;
+        }
         dropping = true;
 
         let position = -FRUIT_SIZE;
         let velocity = 0;
         const gravity = 0.5;
-        const target = frame.clientHeight - stackHeight - FRUIT_SIZE;
+        const targetRow = GRID_ROWS - columnHeights[dropColumn] - 1;
+        const target = targetRow * CELL_SIZE;
 
         function fall() {
             velocity += gravity;
@@ -59,17 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (position >= target) {
                 position = target;
                 currentFruit.style.top = position + 'px';
-                const landedX = parseFloat(currentFruit.style.left) || 0;
-                if (fruits.length > 0) {
-                    const lastFruit = fruits[fruits.length - 1];
-                    if (Math.abs(lastFruit.x - landedX) < FRUIT_SIZE / 2) {
-                        score += 1;
-                        updateScore();
-                    }
-                }
-                fruits.push({ element: currentFruit, x: landedX, type: currentFruit.dataset.type });
-                stackHeight += FRUIT_SIZE;
-                removeMatchingFruits();
+                const placedFruit = {
+                    element: currentFruit,
+                    type: currentFruit.dataset.type,
+                    row: targetRow,
+                    col: dropColumn,
+                };
+                grid[targetRow][dropColumn] = placedFruit;
+                columnHeights[dropColumn] += 1;
+                checkMatches(targetRow, dropColumn);
                 currentFruit = spawnFruit();
                 dropping = false;
                 return;
@@ -89,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fruit.style.fontSize = FRUIT_SIZE + 'px';
         fruit.style.lineHeight = FRUIT_SIZE + 'px';
         fruit.style.top = -FRUIT_SIZE + 'px';
-        fruit.style.left = dropX + 'px';
+        fruit.style.left = dropColumn * CELL_SIZE + 'px';
         frame.appendChild(fruit);
         return fruit;
     }
@@ -98,33 +106,96 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreDisplay.textContent = `スコア: ${score}`;
     }
 
-    function removeMatchingFruits() {
-        let removed = false;
-        while (fruits.length >= 3) {
-            const lastIndex = fruits.length - 1;
-            const type = fruits[lastIndex].type;
-            if (
-                fruits[lastIndex - 1].type === type &&
-                fruits[lastIndex - 2].type === type
-            ) {
-                removeTopFruits(3);
-                score += 3;
-                removed = true;
-            } else {
-                break;
+    function checkMatches(row, col) {
+        const cell = grid[row][col];
+        if (!cell) return;
+
+        const matched = new Set();
+
+        function collectMatches(deltaRow, deltaCol) {
+            const positions = [{ row, col }];
+            let r = row + deltaRow;
+            let c = col + deltaCol;
+
+            while (isInside(r, c) && grid[r][c] && grid[r][c].type === cell.type) {
+                positions.push({ row: r, col: c });
+                r += deltaRow;
+                c += deltaCol;
+            }
+
+            r = row - deltaRow;
+            c = col - deltaCol;
+
+            while (isInside(r, c) && grid[r][c] && grid[r][c].type === cell.type) {
+                positions.push({ row: r, col: c });
+                r -= deltaRow;
+                c -= deltaCol;
+            }
+
+            if (positions.length >= 3) {
+                positions.forEach(({ row: pr, col: pc }) => {
+                    matched.add(`${pr},${pc}`);
+                });
             }
         }
-        if (removed) {
-            updateScore();
+
+        collectMatches(0, 1);
+        collectMatches(1, 0);
+
+        if (matched.size === 0) {
+            return;
         }
+
+        const cellsToRemove = Array.from(matched).map((key) => {
+            const [r, c] = key.split(',').map(Number);
+            return { row: r, col: c };
+        });
+
+        removeMatches(cellsToRemove);
+        score += cellsToRemove.length * 10;
+        updateScore();
     }
 
-    function removeTopFruits(count) {
-        for (let i = 0; i < count; i++) {
-            const removed = fruits.pop();
-            removed.element.remove();
+    function removeMatches(cells) {
+        const columnsToCollapse = new Set();
+
+        cells.forEach(({ row, col }) => {
+            const cell = grid[row][col];
+            if (!cell) return;
+            cell.element.remove();
+            grid[row][col] = null;
+            columnsToCollapse.add(col);
+        });
+
+        columnsToCollapse.forEach((col) => {
+            collapseColumn(col);
+        });
+    }
+
+    function collapseColumn(col) {
+        let writeRow = GRID_ROWS - 1;
+        for (let row = GRID_ROWS - 1; row >= 0; row--) {
+            const cell = grid[row][col];
+            if (!cell) continue;
+
+            if (row !== writeRow) {
+                grid[writeRow][col] = cell;
+                grid[row][col] = null;
+                cell.row = writeRow;
+                cell.element.style.top = writeRow * CELL_SIZE + 'px';
+            }
+            writeRow--;
         }
-        stackHeight = fruits.length * FRUIT_SIZE;
+
+        for (let row = writeRow; row >= 0; row--) {
+            grid[row][col] = null;
+        }
+
+        columnHeights[col] = GRID_ROWS - 1 - writeRow;
+    }
+
+    function isInside(row, col) {
+        return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLUMNS;
     }
 });
 
