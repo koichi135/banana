@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Banana Drop</title>
     <style>
         html, body {
@@ -11,7 +12,7 @@
         body {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             background-image: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80');
             background-size: cover;
@@ -19,6 +20,13 @@
             background-attachment: fixed;
             color: #f2f8f0;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            padding: 40px 20px 60px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 30px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
         #frame {
             width: 600px;
@@ -40,13 +48,13 @@
             font-size: 1.5rem;
             color: #2d4b1d;
         }
-          .fruit {
-              position: absolute;
-              font-size: 40px;
-              line-height: 40px;
-          }
+        .fruit {
+            position: absolute;
+            font-size: 40px;
+            line-height: 40px;
+        }
         #controls {
-            margin-top: 20px;
+            margin-top: 24px;
             display: flex;
             gap: 10px;
             align-items: center;
@@ -55,13 +63,16 @@
             border-radius: 12px;
         }
         button {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             color: #2d4b1d;
             background-color: #f9f5d7;
             border: 2px solid #a3c585;
             border-radius: 10px;
-            padding: 8px 16px;
+            padding: 14px 26px;
+            min-width: 80px;
+            min-height: 64px;
             cursor: pointer;
+            touch-action: manipulation;
         }
         button:hover {
             background-color: #e8e0b5;
@@ -69,6 +80,7 @@
     </style>
 </head>
 <body>
+    <h1>Celestial Fruit Cascade</h1>
     <div id="frame">
         <div id="score">スコア: 0</div>
     </div>
