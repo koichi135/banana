@@ -20,7 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const GRID_COLUMNS = 15;
     const GRID_ROWS = 15;
-    const FRUITS = ['🍌', '🍎', '🍊'];
+    const FRUIT_TYPES = [
+        { key: 'banana', emoji: '🍌', scoreValue: 10, matchGroup: 'banana' },
+        { key: 'apple', emoji: '🍎', scoreValue: 10, matchGroup: 'apple' },
+        { key: 'orange', emoji: '🍊', scoreValue: 10, matchGroup: 'orange' },
+    ];
+    const SUPER_BANANA = { key: 'super-banana', emoji: '🍌✨', scoreValue: 100, matchGroup: 'banana' };
+    const SUPER_BANANA_PROBABILITY = 0.08;
     const MAX_CELL_SIZE = 40;
 
     let cellSize = MAX_CELL_SIZE;
@@ -88,9 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 position = target;
                 currentFruit.style.top = position + 'px';
                 currentFruit.dataset.row = targetRow;
+                const rawScoreValue = Number(currentFruit.dataset.scoreValue);
                 const placedFruit = {
                     element: currentFruit,
                     type: currentFruit.dataset.type,
+                    variant: currentFruit.dataset.variant,
+                    scoreValue: Number.isFinite(rawScoreValue) ? rawScoreValue : 10,
                     row: targetRow,
                     col: dropColumn,
                 };
@@ -108,12 +117,24 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(fall);
     });
 
+    function pickFruitDescriptor() {
+        if (Math.random() < SUPER_BANANA_PROBABILITY) {
+            return SUPER_BANANA;
+        }
+        return FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
+    }
+
     function spawnFruit() {
         const fruit = document.createElement('div');
-        const type = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-        fruit.textContent = type;
-        fruit.dataset.type = type;
+        const descriptor = pickFruitDescriptor();
+        fruit.textContent = descriptor.emoji;
+        fruit.dataset.type = descriptor.matchGroup;
+        fruit.dataset.variant = descriptor.key;
+        fruit.dataset.scoreValue = String(descriptor.scoreValue);
         fruit.className = 'fruit';
+        if (descriptor.key === 'super-banana') {
+            fruit.classList.add('super-banana');
+        }
         fruit.style.fontSize = cellSize + 'px';
         fruit.style.lineHeight = cellSize + 'px';
         fruit.style.top = '0px';
@@ -173,8 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return { row: r, col: c };
         });
 
+        const scoreGain = cellsToRemove.reduce((total, { row: r, col: c }) => {
+            const targetCell = grid[r][c];
+            if (!targetCell) {
+                return total;
+            }
+            const value = targetCell.scoreValue || (targetCell.variant === 'super-banana' ? 100 : 10);
+            return total + value;
+        }, 0);
+
         removeMatches(cellsToRemove);
-        score += cellsToRemove.length * 10;
+        score += scoreGain;
         updateScore();
     }
 
