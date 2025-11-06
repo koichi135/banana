@@ -57,6 +57,9 @@
             font-size: 40px;
             line-height: 40px;
         }
+        .fruit.super-banana {
+            filter: drop-shadow(0 0 6px rgba(255, 238, 88, 0.9));
+        }
         #controls {
             margin-top: 24px;
             display: flex;
@@ -80,6 +83,18 @@
         }
         button:hover {
             background-color: #e8e0b5;
+        }
+        #revision {
+            position: fixed;
+            bottom: 12px;
+            right: 16px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 6px 10px;
+            border-radius: 8px;
+            letter-spacing: 0.08em;
         }
         @media (max-width: 600px) {
             body {
@@ -109,9 +124,10 @@
     </div>
     <div id="controls">
         <button id="left-button">←</button>
-        <button id="drop-button">フルーツを落とす</button>
+        <button id="drop-button">落とす</button>
         <button id="right-button">→</button>
     </div>
+    <div id="revision">Rev. 1.0.0</div>
     <script src="game.js"></script>
 </body>
 </html>
