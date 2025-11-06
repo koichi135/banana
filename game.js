@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
         lastTouchEnd = now;
     }, { passive: false });
 
-    const GRID_COLUMNS = 15;
-    const GRID_ROWS = 15;
+    const GRID_COLUMNS = 6;
+    const GRID_ROWS = 12;
     const FRUIT_TYPES = [
         { key: 'banana', emoji: '🍌', scoreValue: 10, matchGroup: 'banana' },
         { key: 'apple', emoji: '🍎', scoreValue: 10, matchGroup: 'apple' },
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let dropping = false;
     let currentFruit = null;
     let score = 0;
+    let gameOver = false;
 
     adjustLayout();
     currentFruit = spawnFruit();
@@ -50,19 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     leftButton.addEventListener('click', () => {
-        if (dropping) return;
+        if (dropping || gameOver) return;
         dropColumn = Math.max(0, dropColumn - 1);
         updateFruitPosition();
     });
 
     rightButton.addEventListener('click', () => {
-        if (dropping) return;
+        if (dropping || gameOver) return;
         dropColumn = Math.min(GRID_COLUMNS - 1, dropColumn + 1);
         updateFruitPosition();
     });
 
     document.addEventListener('keydown', (e) => {
-        if (dropping) return;
+        if (dropping || gameOver) return;
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
             dropColumn = Math.max(0, dropColumn - 1);
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     dropButton.addEventListener('click', () => {
-        if (dropping) return;
+        if (dropping || gameOver) return;
         if (columnHeights[dropColumn] >= GRID_ROWS) {
             return;
         }
@@ -105,7 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 grid[targetRow][dropColumn] = placedFruit;
                 columnHeights[dropColumn] += 1;
+                const reachedTop = targetRow === 0;
                 checkMatches(targetRow, dropColumn);
+                if (gameOver) {
+                    return;
+                }
+                if (reachedTop || isTopRowOccupied()) {
+                    handleGameOver();
+                    return;
+                }
                 currentFruit = spawnFruit();
                 dropping = false;
                 updateFruitPosition();
@@ -125,6 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function spawnFruit() {
+        if (gameOver) {
+            return null;
+        }
         const fruit = document.createElement('div');
         const descriptor = pickFruitDescriptor();
         fruit.textContent = descriptor.emoji;
@@ -153,46 +165,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell = grid[row][col];
         if (!cell) return;
 
-        const matched = new Set();
+        const visited = new Set();
+        const cluster = [];
+        const stack = [{ row, col }];
 
-        function collectMatches(deltaRow, deltaCol) {
-            const positions = [{ row, col }];
-            let r = row + deltaRow;
-            let c = col + deltaCol;
+        while (stack.length > 0) {
+            const current = stack.pop();
+            const key = `${current.row},${current.col}`;
+            if (visited.has(key)) {
+                continue;
+            }
+            visited.add(key);
 
-            while (isInside(r, c) && grid[r][c] && grid[r][c].type === cell.type) {
-                positions.push({ row: r, col: c });
-                r += deltaRow;
-                c += deltaCol;
+            const currentCell = grid[current.row][current.col];
+            if (!currentCell || currentCell.type !== cell.type) {
+                continue;
             }
 
-            r = row - deltaRow;
-            c = col - deltaCol;
+            cluster.push(current);
 
-            while (isInside(r, c) && grid[r][c] && grid[r][c].type === cell.type) {
-                positions.push({ row: r, col: c });
-                r -= deltaRow;
-                c -= deltaCol;
-            }
+            const neighbors = [
+                { row: current.row - 1, col: current.col },
+                { row: current.row + 1, col: current.col },
+                { row: current.row, col: current.col - 1 },
+                { row: current.row, col: current.col + 1 },
+            ];
 
-            if (positions.length >= 3) {
-                positions.forEach(({ row: pr, col: pc }) => {
-                    matched.add(`${pr},${pc}`);
-                });
-            }
+            neighbors.forEach((neighbor) => {
+                if (!isInside(neighbor.row, neighbor.col)) {
+                    return;
+                }
+                const neighborCell = grid[neighbor.row][neighbor.col];
+                if (!neighborCell || neighborCell.type !== cell.type) {
+                    return;
+                }
+                stack.push(neighbor);
+            });
         }
 
-        collectMatches(0, 1);
-        collectMatches(1, 0);
-
-        if (matched.size === 0) {
+        if (cluster.length < 3) {
             return;
         }
 
-        const cellsToRemove = Array.from(matched).map((key) => {
-            const [r, c] = key.split(',').map(Number);
-            return { row: r, col: c };
-        });
+        const cellsToRemove = cluster;
 
         const scoreGain = cellsToRemove.reduce((total, { row: r, col: c }) => {
             const targetCell = grid[r][c];
@@ -251,6 +266,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function isInside(row, col) {
         return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLUMNS;
+    }
+
+    function isTopRowOccupied() {
+        for (let col = 0; col < GRID_COLUMNS; col++) {
+            if (grid[0][col]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function handleGameOver() {
+        if (gameOver) {
+            return;
+        }
+        gameOver = true;
+        dropping = false;
+        currentFruit = null;
+        dropButton.disabled = true;
+        leftButton.disabled = true;
+        rightButton.disabled = true;
+        scoreDisplay.textContent = `ゲームオーバー! スコア: ${score}`;
     }
 
     function calculateCellSize() {
