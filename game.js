@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const frame = document.getElementById('frame');
+    const scene = document.getElementById('scene');
     const dropButton = document.getElementById('drop-button');
     const leftButton = document.getElementById('left-button');
     const rightButton = document.getElementById('right-button');
@@ -41,8 +42,42 @@ document.addEventListener('DOMContentLoaded', () => {
     let score = 0;
     let gameOver = false;
 
+    enable3dTilt();
     adjustLayout();
     currentFruit = spawnFruit();
+
+    function enable3dTilt() {
+        if (!scene || !frame) {
+            return;
+        }
+
+        const maxRotate = 8;
+
+        function applyTilt(clientX, clientY) {
+            const rect = scene.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const percentX = (clientX - centerX) / (rect.width / 2);
+            const percentY = (clientY - centerY) / (rect.height / 2);
+            const rotateY = Math.max(-1, Math.min(1, percentX)) * maxRotate;
+            const rotateX = Math.max(-1, Math.min(1, -percentY)) * maxRotate;
+
+            frame.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            frame.style.boxShadow = `${-rotateY * 1.2}px ${18 + Math.abs(rotateX)}px 32px rgba(0, 0, 0, 0.45)`;
+        }
+
+        function resetTilt() {
+            frame.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            frame.style.boxShadow = '0 18px 30px rgba(0, 0, 0, 0.4)';
+        }
+
+        scene.addEventListener('pointermove', (event) => {
+            applyTilt(event.clientX, event.clientY);
+        });
+
+        scene.addEventListener('pointerleave', resetTilt);
+        resetTilt();
+    }
 
     function updateFruitPosition() {
         if (!currentFruit) return;
