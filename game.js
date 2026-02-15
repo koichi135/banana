@@ -22,11 +22,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const GRID_COLUMNS = 6;
     const GRID_ROWS = 12;
     const FRUIT_TYPES = [
-        { key: 'banana', emoji: '🍌', scoreValue: 10, matchGroup: 'banana' },
-        { key: 'apple', emoji: '🍎', scoreValue: 10, matchGroup: 'apple' },
-        { key: 'orange', emoji: '🍊', scoreValue: 10, matchGroup: 'orange' },
+        {
+            key: 'banana',
+            scoreValue: 10,
+            matchGroup: 'banana',
+            colors: { main: '#ffe082', dark: '#f4b400', light: '#fff7c2', stem: '#7a5a2e' },
+        },
+        {
+            key: 'apple',
+            scoreValue: 10,
+            matchGroup: 'apple',
+            colors: { main: '#ff7c73', dark: '#df3f38', light: '#ffd2cb', stem: '#6b3f1c' },
+        },
+        {
+            key: 'orange',
+            scoreValue: 10,
+            matchGroup: 'orange',
+            colors: { main: '#ffb04d', dark: '#f57c00', light: '#ffe0b8', stem: '#5f6b1c' },
+        },
     ];
-    const SUPER_BANANA = { key: 'super-banana', emoji: '🍌✨', scoreValue: 100, matchGroup: 'banana' };
+
+    const SUPER_BANANA = {
+        key: 'super-banana',
+        scoreValue: 100,
+        matchGroup: 'banana',
+        colors: { main: '#fff08a', dark: '#f9c700', light: '#ffffdf', stem: '#8d6e29' },
+    };
+
     const SUPER_BANANA_PROBABILITY = 0.08;
     const MAX_CELL_SIZE = 40;
 
@@ -47,9 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFruit = spawnFruit();
 
     function enable3dTilt() {
-        if (!scene || !frame) {
-            return;
-        }
+        if (!scene || !frame) return;
 
         const maxRotate = 8;
 
@@ -97,14 +117,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFruitPosition();
     });
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', (event) => {
         if (dropping || gameOver) return;
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault();
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
             dropColumn = Math.max(0, dropColumn - 1);
             updateFruitPosition();
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
             dropColumn = Math.min(GRID_COLUMNS - 1, dropColumn + 1);
             updateFruitPosition();
         }
@@ -112,9 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dropButton.addEventListener('click', () => {
         if (dropping || gameOver) return;
-        if (columnHeights[dropColumn] >= GRID_ROWS) {
-            return;
-        }
+        if (columnHeights[dropColumn] >= GRID_ROWS) return;
+
         dropping = true;
 
         let position = currentFruit.offsetTop || 0;
@@ -126,10 +145,12 @@ document.addEventListener('DOMContentLoaded', () => {
         function fall() {
             velocity += gravity;
             position += velocity;
+
             if (position >= target) {
                 position = target;
-                currentFruit.style.top = position + 'px';
+                currentFruit.style.top = `${position}px`;
                 currentFruit.dataset.row = targetRow;
+
                 const rawScoreValue = Number(currentFruit.dataset.scoreValue);
                 const placedFruit = {
                     element: currentFruit,
@@ -139,55 +160,64 @@ document.addEventListener('DOMContentLoaded', () => {
                     row: targetRow,
                     col: dropColumn,
                 };
+
                 grid[targetRow][dropColumn] = placedFruit;
                 columnHeights[dropColumn] += 1;
+
                 const reachedTop = targetRow === 0;
                 checkMatches(targetRow, dropColumn);
-                if (gameOver) {
-                    return;
-                }
+                if (gameOver) return;
+
                 if (reachedTop || isTopRowOccupied()) {
                     handleGameOver();
                     return;
                 }
+
                 currentFruit = spawnFruit();
                 dropping = false;
                 updateFruitPosition();
                 return;
             }
-            currentFruit.style.top = position + 'px';
+
+            currentFruit.style.top = `${position}px`;
             requestAnimationFrame(fall);
         }
+
         requestAnimationFrame(fall);
     });
 
     function pickFruitDescriptor() {
-        if (Math.random() < SUPER_BANANA_PROBABILITY) {
-            return SUPER_BANANA;
-        }
+        if (Math.random() < SUPER_BANANA_PROBABILITY) return SUPER_BANANA;
         return FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
     }
 
     function spawnFruit() {
-        if (gameOver) {
-            return null;
-        }
+        if (gameOver) return null;
+
         const fruit = document.createElement('div');
         const descriptor = pickFruitDescriptor();
-        fruit.textContent = descriptor.emoji;
+
         fruit.dataset.type = descriptor.matchGroup;
         fruit.dataset.variant = descriptor.key;
         fruit.dataset.scoreValue = String(descriptor.scoreValue);
         fruit.className = 'fruit';
+
         if (descriptor.key === 'super-banana') {
             fruit.classList.add('super-banana');
         }
-        fruit.style.fontSize = cellSize + 'px';
-        fruit.style.lineHeight = cellSize + 'px';
+
+        fruit.style.setProperty('--fruit-main', descriptor.colors.main);
+        fruit.style.setProperty('--fruit-dark', descriptor.colors.dark);
+        fruit.style.setProperty('--fruit-light', descriptor.colors.light);
+        fruit.style.setProperty('--fruit-stem', descriptor.colors.stem);
+        fruit.style.width = `${cellSize}px`;
+        fruit.style.height = `${cellSize}px`;
         fruit.style.top = '0px';
-        fruit.style.left = dropColumn * cellSize + 'px';
+        fruit.style.left = `${dropColumn * cellSize}px`;
         fruit.dataset.row = -1;
         fruit.dataset.col = dropColumn;
+
+        fruit.innerHTML = '<span class="fruit-poly"></span><span class="fruit-stem"></span>';
         frame.appendChild(fruit);
         return fruit;
     }
@@ -207,15 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
         while (stack.length > 0) {
             const current = stack.pop();
             const key = `${current.row},${current.col}`;
-            if (visited.has(key)) {
-                continue;
-            }
+            if (visited.has(key)) continue;
             visited.add(key);
 
             const currentCell = grid[current.row][current.col];
-            if (!currentCell || currentCell.type !== cell.type) {
-                continue;
-            }
+            if (!currentCell || currentCell.type !== cell.type) continue;
 
             cluster.push(current);
 
@@ -227,33 +253,23 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
 
             neighbors.forEach((neighbor) => {
-                if (!isInside(neighbor.row, neighbor.col)) {
-                    return;
-                }
+                if (!isInside(neighbor.row, neighbor.col)) return;
                 const neighborCell = grid[neighbor.row][neighbor.col];
-                if (!neighborCell || neighborCell.type !== cell.type) {
-                    return;
-                }
+                if (!neighborCell || neighborCell.type !== cell.type) return;
                 stack.push(neighbor);
             });
         }
 
-        if (cluster.length < 3) {
-            return;
-        }
+        if (cluster.length < 3) return;
 
-        const cellsToRemove = cluster;
-
-        const scoreGain = cellsToRemove.reduce((total, { row: r, col: c }) => {
+        const scoreGain = cluster.reduce((total, { row: r, col: c }) => {
             const targetCell = grid[r][c];
-            if (!targetCell) {
-                return total;
-            }
+            if (!targetCell) return total;
             const value = targetCell.scoreValue || (targetCell.variant === 'super-banana' ? 100 : 10);
             return total + value;
         }, 0);
 
-        removeMatches(cellsToRemove);
+        removeMatches(cluster);
         score += scoreGain;
         updateScore();
     }
@@ -276,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function collapseColumn(col) {
         let writeRow = GRID_ROWS - 1;
+
         for (let row = GRID_ROWS - 1; row >= 0; row--) {
             const cell = grid[row][col];
             if (!cell) continue;
@@ -287,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.col = col;
                 cell.element.dataset.row = writeRow;
                 cell.element.dataset.col = col;
-                cell.element.style.top = writeRow * cellSize + 'px';
+                cell.element.style.top = `${writeRow * cellSize}px`;
             }
             writeRow--;
         }
@@ -305,20 +322,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function isTopRowOccupied() {
         for (let col = 0; col < GRID_COLUMNS; col++) {
-            if (grid[0][col]) {
-                return true;
-            }
+            if (grid[0][col]) return true;
         }
         return false;
     }
 
     function handleGameOver() {
-        if (gameOver) {
-            return;
-        }
+        if (gameOver) return;
+
         gameOver = true;
         dropping = false;
         currentFruit = null;
+
         dropButton.disabled = true;
         leftButton.disabled = true;
         rightButton.disabled = true;
@@ -330,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const heightBasedRaw = Math.floor((window.innerHeight - 260) / GRID_ROWS);
         const heightBased = heightBasedRaw > 0 ? heightBasedRaw : Number.POSITIVE_INFINITY;
         const candidate = Math.min(MAX_CELL_SIZE, widthBased, heightBased);
+
         if (!Number.isFinite(candidate) || candidate <= 0) {
             return MAX_CELL_SIZE;
         }
@@ -339,34 +355,37 @@ document.addEventListener('DOMContentLoaded', () => {
     function adjustLayout() {
         previousCellSize = cellSize;
         cellSize = calculateCellSize();
-        frame.style.width = GRID_COLUMNS * cellSize + 'px';
-        frame.style.height = GRID_ROWS * cellSize + 'px';
+
+        frame.style.width = `${GRID_COLUMNS * cellSize}px`;
+        frame.style.height = `${GRID_ROWS * cellSize}px`;
         frame.style.backgroundSize = `${cellSize}px ${cellSize}px`;
 
         for (let row = 0; row < GRID_ROWS; row++) {
             for (let col = 0; col < GRID_COLUMNS; col++) {
                 const cell = grid[row][col];
                 if (!cell) continue;
-                cell.element.style.fontSize = cellSize + 'px';
-                cell.element.style.lineHeight = cellSize + 'px';
-                cell.element.style.left = col * cellSize + 'px';
-                cell.element.style.top = row * cellSize + 'px';
+
+                cell.element.style.width = `${cellSize}px`;
+                cell.element.style.height = `${cellSize}px`;
+                cell.element.style.left = `${col * cellSize}px`;
+                cell.element.style.top = `${row * cellSize}px`;
                 cell.element.dataset.row = row;
                 cell.element.dataset.col = col;
             }
         }
 
         if (currentFruit) {
-            currentFruit.style.fontSize = cellSize + 'px';
-            currentFruit.style.lineHeight = cellSize + 'px';
+            currentFruit.style.width = `${cellSize}px`;
+            currentFruit.style.height = `${cellSize}px`;
             const row = Number(currentFruit.dataset.row);
+
             if (!Number.isNaN(row) && row >= 0) {
-                currentFruit.style.top = row * cellSize + 'px';
+                currentFruit.style.top = `${row * cellSize}px`;
             } else {
                 const currentTop = parseFloat(currentFruit.style.top);
                 if (!Number.isNaN(currentTop)) {
                     const ratio = previousCellSize > 0 ? cellSize / previousCellSize : 1;
-                    currentFruit.style.top = currentTop * ratio + 'px';
+                    currentFruit.style.top = `${currentTop * ratio}px`;
                 }
             }
             updateFruitPosition();
@@ -377,4 +396,3 @@ document.addEventListener('DOMContentLoaded', () => {
         adjustLayout();
     });
 });
-
