@@ -1,5 +1,9 @@
 # Banana Game
 
-A simple browser game. Tap the button to spawn bananas on the screen.
+ブラウザで遊べる落ちものゲームです。
 
-Open `index.html` in a web browser to play.
+- 3Dチルト演出付きの盤面
+- ライムグリーンのグリッド
+- フルーツを簡易ポリゴン風に描画
+
+`index.html` をブラウザで開くとプレイできます。
