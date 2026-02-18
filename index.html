@@ -63,6 +63,23 @@
             border-radius: 12px;
             backdrop-filter: blur(2px);
         }
+        #combo-display {
+            min-height: 2.2rem;
+            margin-bottom: 8px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff6ae;
+            letter-spacing: 0.06em;
+            opacity: 0;
+            transform: translateY(-4px) scale(0.95);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(255, 231, 120, 0.7), 0 2px 4px rgba(0, 0, 0, 0.65);
+        }
+        #combo-display.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
         .fruit {
             position: absolute;
             inset: auto;
@@ -277,6 +294,7 @@
 <body>
     <h1>Banana Drop</h1>
     <div id="score">スコア: 0</div>
+    <div id="combo-display" aria-live="polite"></div>
     <div id="scene">
         <div id="frame"></div>
     </div>
@@ -285,7 +303,7 @@
         <button id="drop-button">落とす</button>
         <button id="right-button">→</button>
     </div>
-    <div id="revision">Rev. 1.1.0</div>
+    <div id="revision">Rev. 1.2.0</div>
     <script src="game.js"></script>
 </body>
 </html>
