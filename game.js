@@ -282,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cells.forEach(({ row, col }) => {
             const cell = grid[row][col];
             if (!cell) return;
+            createVanishVfx(cell);
             cell.element.remove();
             grid[row][col] = null;
             columnsToCollapse.add(col);
@@ -290,6 +291,40 @@ document.addEventListener('DOMContentLoaded', () => {
         columnsToCollapse.forEach((col) => {
             collapseColumn(col);
         });
+    }
+
+    function createVanishVfx(cell) {
+        if (!cell || !cell.element) return;
+
+        const burst = document.createElement('div');
+        burst.className = 'fruit-burst';
+        burst.style.left = `${cell.col * cellSize + cellSize / 2}px`;
+        burst.style.top = `${cell.row * cellSize + cellSize / 2}px`;
+
+        const fruitStyle = getComputedStyle(cell.element);
+        const mainColor = fruitStyle.getPropertyValue('--fruit-main').trim() || '#fff5a0';
+        const lightColor = fruitStyle.getPropertyValue('--fruit-light').trim() || '#ffffff';
+
+        const particleCount = 10;
+        for (let i = 0; i < particleCount; i++) {
+            const spark = document.createElement('span');
+            spark.className = 'fruit-spark';
+            const angle = Math.random() * Math.PI * 2;
+            const distance = cellSize * (0.55 + Math.random() * 0.8);
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            spark.style.setProperty('--spark-x', `${x}px`);
+            spark.style.setProperty('--spark-y', `${y}px`);
+            spark.style.setProperty('--spark-size', `${Math.max(3, cellSize * (0.09 + Math.random() * 0.1))}px`);
+            spark.style.setProperty('--spark-delay', `${Math.random() * 80}ms`);
+            spark.style.background = i % 2 === 0 ? mainColor : lightColor;
+            burst.appendChild(spark);
+        }
+
+        frame.appendChild(burst);
+        setTimeout(() => {
+            burst.remove();
+        }, 520);
     }
 
     function collapseColumn(col) {
