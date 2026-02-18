@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const leftButton = document.getElementById('left-button');
     const rightButton = document.getElementById('right-button');
     const scoreDisplay = document.getElementById('score');
+    const comboDisplay = document.getElementById('combo-display');
 
     document.addEventListener('dblclick', (event) => {
         event.preventDefault();
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFruit = null;
     let score = 0;
     let gameOver = false;
+    let comboHideTimer = null;
 
     enable3dTilt();
     adjustLayout();
@@ -164,11 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 grid[targetRow][dropColumn] = placedFruit;
                 columnHeights[dropColumn] += 1;
 
-                const reachedTop = targetRow === 0;
-                checkMatches(targetRow, dropColumn);
+                resolveChainsFrom(targetRow, dropColumn);
                 if (gameOver) return;
 
-                if (reachedTop || isTopRowOccupied()) {
+                if (isTopRowOccupied()) {
                     handleGameOver();
                     return;
                 }
@@ -228,9 +229,68 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreDisplay.textContent = `スコア: ${score}`;
     }
 
-    function checkMatches(row, col) {
+    function showCombo(comboCount) {
+        if (!comboDisplay) return;
+
+        if (comboHideTimer) {
+            clearTimeout(comboHideTimer);
+            comboHideTimer = null;
+        }
+
+        if (comboCount >= 2) {
+            comboDisplay.textContent = `${comboCount} COMBO!`;
+            comboDisplay.classList.add('show');
+            comboHideTimer = setTimeout(() => {
+                comboDisplay.classList.remove('show');
+                comboDisplay.textContent = '';
+                comboHideTimer = null;
+            }, 900);
+            return;
+        }
+
+        comboDisplay.classList.remove('show');
+        comboDisplay.textContent = '';
+    }
+
+    function resolveChainsFrom(row, col) {
+        let comboCount = 0;
+        const queue = [{ row, col }];
+
+        while (queue.length > 0) {
+            const seed = queue.shift();
+            const cluster = collectCluster(seed.row, seed.col);
+            if (cluster.length < 3) continue;
+
+            comboCount += 1;
+
+            const scoreGain = cluster.reduce((total, { row: r, col: c }) => {
+                const targetCell = grid[r][c];
+                if (!targetCell) return total;
+                const value = targetCell.scoreValue || (targetCell.variant === 'super-banana' ? 100 : 10);
+                return total + value;
+            }, 0);
+
+            const columnsToRecheck = removeMatches(cluster);
+            score += scoreGain;
+            updateScore();
+
+            queue.length = 0;
+            columnsToRecheck.forEach((targetCol) => {
+                for (let targetRow = GRID_ROWS - 1; targetRow >= 0; targetRow--) {
+                    if (!grid[targetRow][targetCol]) continue;
+                    queue.push({ row: targetRow, col: targetCol });
+                }
+            });
+        }
+
+        showCombo(comboCount);
+    }
+
+    function collectCluster(row, col) {
+        if (!isInside(row, col)) return [];
+
         const cell = grid[row][col];
-        if (!cell) return;
+        if (!cell) return [];
 
         const visited = new Set();
         const cluster = [];
@@ -262,18 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (cluster.length < 3) return;
-
-        const scoreGain = cluster.reduce((total, { row: r, col: c }) => {
-            const targetCell = grid[r][c];
-            if (!targetCell) return total;
-            const value = targetCell.scoreValue || (targetCell.variant === 'super-banana' ? 100 : 10);
-            return total + value;
-        }, 0);
-
-        removeMatches(cluster);
-        score += scoreGain;
-        updateScore();
+        return cluster;
     }
 
     function removeMatches(cells) {
@@ -291,6 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
         columnsToCollapse.forEach((col) => {
             collapseColumn(col);
         });
+
+        return columnsToCollapse;
     }
 
     function createVanishVfx(cell) {
