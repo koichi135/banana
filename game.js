@@ -201,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fruit.dataset.variant = descriptor.key;
         fruit.dataset.scoreValue = String(descriptor.scoreValue);
         fruit.className = 'fruit';
+        const shapeClass = descriptor.matchGroup === 'banana' ? 'fruit--banana' : `fruit--${descriptor.matchGroup}`;
+        fruit.classList.add(shapeClass);
 
         if (descriptor.key === 'super-banana') {
             fruit.classList.add('super-banana');
